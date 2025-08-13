@@ -1,0 +1,43 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<p>This is the control panel for admin.</p>
+<h2>Welcome, {{ request.user.get_full_name}}</h2>
+<div class="container mt-4">
+  
+  <div class="row mt-4">
+
+    <div class="col-md-4">
+      <div class="card text-white bg-primary mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Manage Students</h5>
+          <p class="card-text">Add, update or delete student profiles.</p>
+          <a href="{% url 'manage_students' %}" class="btn btn-light">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card text-white bg-success mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Manage Teachers</h5>
+          <p class="card-text">Add, update or delete teacher profiles.</p>
+          <a href="{% url 'manage_teachers' %}" class="btn btn-light">Go</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card text-white bg-info mb-3">
+        <div class="card-body">
+          <h5 class="card-title">View Attendance</h5>
+          <p class="card-text">View all students' attendance records.</p>
+          <a href="{% url 'admin_attendance' %}" class="btn btn-light">Go</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

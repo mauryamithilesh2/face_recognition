@@ -1,0 +1,26 @@
+{% extends "attendance/base.html" %}
+{% block title %}Manage Teachers{% endblock %}
+{% block content %}
+<h3>Manage Teachers</h3>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for teacher in teachers %}
+        <tr>
+            <td>{{ teacher.user.username }}</td>
+            <td>{{ teacher.user.email }}</td>
+            <td><a href="{% url 'edit_student' %}" class="btn btn-warning btn-sm">Edit</a>
+            <a href="{% url 'delete_student' %}" class="btn btn-danger btn-sm">Delete</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2">No teachers found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

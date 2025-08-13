@@ -1,0 +1,28 @@
+{% extends "attendance/base.html" %}
+{% block title %}All Students Attendance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">All Students Attendance Records</h2>
+    {% if attendance_data %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in attendance_data %}
+            <tr>
+                <td>{{ record.student.user.get_full_name }}</td>
+                <td>{{ record.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No attendance records found.</p>
+    {% endif %}
+</div>
+{% endblock %}

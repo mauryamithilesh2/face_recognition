@@ -1,0 +1,38 @@
+{% extends "attendance/base.html" %}
+
+{% block title %}All Student records{% endblock  %}
+
+{% block content %}
+<h3>All Student's Attendance</h3>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Student Name</th>
+            <th>Roll No</th>
+            <th>Date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in attendance_records  %}
+        <tr>
+            <td>{{ record.student.user.username }}</td>
+            <td>{{record.student.roll_no}}</td>
+            <td>{{ record.timestamp|time:"H:i:s" }}</td>
+            <td>
+                {% if record.status == "Present" %}
+                <span class="badge bg-success"> Present</span>
+                {% else %}
+                 <span class="badge bg-danger"> Absent</span>
+                {% endif %}
+            </td>
+        </tr>
+         {% empty %}
+        <tr>
+            <td colspan="2">No attendance marked today.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock  %}

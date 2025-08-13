@@ -1,0 +1,10 @@
+{% extends "attendance/base.html" %}
+{% block content  %}
+<h3>{{action}} Student</h3>
+<form method="post">
+{% csrf_token %}
+{{form.as_p}}
+<button type="submit" class="btn,btn-success" >{{action}}</button>
+<a href="{% url 'manage_students' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock  %}

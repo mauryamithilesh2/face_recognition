@@ -1,0 +1,36 @@
+{% extends "attendance/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="container-fluid">
+  <div class="row">
+
+    <div class="col-md-6">
+      <h2>Welcome, {{ role|capfirst }} {{ user.get_full_name|default:user.username }}</h2>
+
+
+      {% if role == "admin" %}
+          <h2>Welcome, Admin {{ user.username }}</h2>
+          <a href="{% url 'student_attendance' %}" class="btn btn-info mt-2">Manage Attendance</a>
+
+      {% elif role == "teacher" %}
+          <h2>Welcome, Teacher {{ teacher.user.get_full_name }}</h2>
+          <p>This is your dashboard for managing student attendance.</p>
+          <a href="{% url 'teacher_all_attendance' %}" class="btn btn-info mt-2">View All Student Attendance</a>
+
+      {% elif role == "student" %}
+          <h2>Welcome, Student {{ student.user.get_full_name }}</h2>
+          <p>You can check your attendance below.</p>
+          <a href="{% url 'student_attendance' %}" class="btn btn-info mt-2">My Attendance</a>
+
+      {% else %}
+          <p>Your role could not be determined.</p>
+      {% endif %}
+    </div>
+
+    
+
+  </div>
+</div>
+
+{% endblock %}
