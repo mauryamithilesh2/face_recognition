@@ -1,4 +1,8 @@
-django
-pillo
+Django>=4.0,<5.0
 gunicorn
+psycopg2-binary
+dj-database-url
 whitenoise
+opencv-python
+face-recognition
+numpy
