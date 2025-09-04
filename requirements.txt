@@ -1,10 +1,9 @@
 
-
+opencv-python-headless
+face-recognition==1.3.0
+numpy
+Django
+gunicorn
+whitenoise
 psycopg2-binary
 dj-database-url
-whitenoise
-opencv-python
-face-recognition
-numpy
-django
-gunicorn
