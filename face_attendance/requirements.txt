@@ -1,0 +1,4 @@
+django
+pillo
+gunicorn
+whitenoise
