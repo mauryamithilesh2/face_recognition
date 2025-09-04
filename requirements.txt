@@ -1,8 +1,9 @@
-django
+django==5.0.6
 gunicorn
 whitenoise
 psycopg2-binary
-numpy
-opencv-python-headless
-face-recognition
 dj-database-url
+opencv-python
+face-recognition
+numpy
+setuptools
