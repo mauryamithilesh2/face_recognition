@@ -258,11 +258,10 @@ def logout_view(request):
     logout(request)
     return redirect('login_view')
 
-
-@csrf_exempt
-@user_passes_test(is_student)
-@require_POST
 @login_required
+@user_passes_test(is_student)
+@csrf_exempt
+@require_POST
 def mark_attendance(request):
     try:
         data = json.loads(request.body)

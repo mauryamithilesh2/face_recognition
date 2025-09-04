@@ -3,7 +3,7 @@ gunicorn
 whitenoise
 psycopg2-binary
 dj-database-url
-opencv-python
+opencv-python-headless
 face-recognition
 numpy
 setuptools
