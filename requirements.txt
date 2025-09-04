@@ -1,8 +1,10 @@
 
-gunicorn
+
 psycopg2-binary
 dj-database-url
 whitenoise
 opencv-python
 face-recognition
 numpy
+django
+gunicorn
