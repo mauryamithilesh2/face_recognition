@@ -40,4 +40,33 @@
 
   </div>
 </div>
+
+
+
+<hr>
+<h3>Pending Admin Requests</h3>
+
+{% if messages %}
+  {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+{% if pending_admins %}
+  <ul>
+    {% for profile in pending_admins %}
+      <li>
+        {{ profile.user.username }} ({{ profile.user.email }})
+        <form method="POST" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="user_id" value="{{ profile.user.id }}">
+          <button type="submit" name="action" value="approve" class="btn btn-success">Approve ✅</button>
+          <button type="submit" name="action" value="reject" class="btn btn-danger">Reject ❌</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No pending admin requests 🎉</p>
+{% endif %}
 {% endblock %}

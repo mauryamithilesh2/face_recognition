@@ -5,19 +5,24 @@
 {% block content %}
 <h3>All Student's Attendance</h3>
 
-<table class="table table-striped">
+{% for student, records in grouped_attendance.items %}
+  <h4>{{ student.user }} (Roll No: {{ student.roll_no }})</h4>
+
+<table class="table table-bordered table-striped mb-4">
     <thead>
         <tr>
-            <th>Student Name</th>
+            {% comment %} <th>Student Name</th> {% endcomment %}
             <th>Roll No</th>
             <th>Date</th>
+            <th>Time</th>
             <th>Status</th>
         </tr>
     </thead>
     <tbody>
-        {% for record in attendance_records  %}
+        {% for record in records  %}
         <tr>
-            <td>{{ record.student.user.username }}</td>
+            {% comment %} <td>{{ record.student.user.username }}</td> {% endcomment %}
+            <td>{{ record.date }}</td>
             <td>{{record.student.roll_no}}</td>
             <td>{{ record.timestamp|time:"H:i:s" }}</td>
             <td>
@@ -35,4 +40,9 @@
         {% endfor %}
     </tbody>
 </table>
+{% empty %}
+  <p>No students found.</p>
+{% endfor %}
+
+
 {% endblock  %}
