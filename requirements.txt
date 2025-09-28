@@ -1,9 +1,10 @@
 django==5.0.6
-gunicorn
-whitenoise
-psycopg2-binary
-dj-database-url
-opencv-python-headless
-face-recognition
-numpy
+gunicorn==22.0.0
+whitenoise==6.7.0
+psycopg2-binary==2.9.9
+dj-database-url==2.2.0
+opencv-python-headless==4.10.0.84
+dlib==19.24.6
+face-recognition==1.3.0
+numpy==1.26.4
 setuptools
