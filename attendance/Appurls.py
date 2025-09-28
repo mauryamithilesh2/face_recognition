@@ -22,8 +22,11 @@ urlpatterns =[
 
     #student management 
     path('manage_students/', views.manage_students, name='manage_students'),
+    path('add_student/',views.add_student,name='add_student'),
     path('edit_student/<int:student_id>/',views.edit_student,name='edit_student'),
-    # path('add_student/',views.add_student,name='add_student'),
 
     path('delete_student/<int:student_id>/',views.delete_student,name='delete_student'),
+
+    # alias for templates expecting 'student_attendance'
+    path('student_attendance/', views.student_dashboard, name='student_attendance'),
 ]

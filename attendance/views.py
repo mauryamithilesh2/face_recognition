@@ -4,8 +4,7 @@ import numpy as np
 import face_recognition
 from django.shortcuts import render,redirect,get_object_or_404
 from .models import Student, Attendance,AdminProfile,Profile,Teacher
-from .face_encode import get_encode_faces
-from datetime import date,timezone,datetime
+from datetime import date, datetime
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required,user_passes_test
 from django.views.decorators.http import require_POST
@@ -23,7 +22,7 @@ from .forms import CustomUserCreationForm
 from django.urls import reverse
 from django.db.models import Prefetch
 from django.http import HttpResponseForbidden
-
+from .utils import get_encode_faces
 
 @login_required
 def home(request):
@@ -32,14 +31,19 @@ def home(request):
     if user.is_superuser or user.is_staff:
         return redirect('admin_dashboard')
 
-    elif hasattr(user, 'teacher'):
-        return redirect('teacher_dashboard')
+    try:
+        if hasattr(user, 'teacher') and getattr(user, 'teacher', None) is not None:
+            return redirect('teacher_dashboard')
+    except Exception:
+        pass
 
-    elif hasattr(user, 'student'):
-        return redirect('student_dashboard')
+    try:
+        if hasattr(user, 'student') and getattr(user, 'student', None) is not None:
+            return redirect('student_dashboard')
+    except Exception:
+        pass
 
-    else:
-        return render(request, "attendance/home.html", {"role": "unknown"})
+    return render(request, "attendance/home.html", {"role": "unknown"})
 
 
 @csrf_protect
@@ -51,7 +55,7 @@ def login_view(request):
 
         user = authenticate(request, username=username, password=password)
         if user:
-            profile, created = Profile.objects.get_or_create(user=user)
+            profile, created = Profile.objects.get_or_create(user=user, defaults={'role': 'student', 'is_approved': True})
 
             # ❌ Block unapproved admins
             if profile.role == 'admin' and not profile.is_approved:
@@ -121,7 +125,11 @@ def teacher_attendance_view(request):
 
 
 def is_student(user):
-    return hasattr(user, 'profile') and user.profile.role == 'student'
+    try:
+        profile = getattr(user, 'profile', None)
+        return bool(profile and profile.role == 'student')
+    except Exception:
+        return False
 
 
 from django.utils.timezone import localdate
@@ -132,10 +140,33 @@ def student_dashboard(request):
     records = Attendance.objects.filter(student=student).order_by('-timestamp')
     today = localdate()
     today_record = Attendance.objects.filter(student=student, timestamp__date=today).first()
+
+    # Build simple 7-day stats for the dashboard (safe defaults)
+    try:
+        from datetime import timedelta
+        last_7 = [today - timedelta(days=i) for i in range(6, -1, -1)]
+        labels = [d.strftime('%a') for d in last_7]
+        status_map = {r.date: (1 if r.status == 'Present' else 0) for r in Attendance.objects.filter(student=student, date__gte=last_7[0], date__lte=last_7[-1])}
+        present_series = [status_map.get(d, 0) for d in last_7]
+        student_weekly = {
+            'labels': labels,
+            'present': present_series,
+        }
+        student_stats = {
+            'present_7d': sum(present_series),
+            'absent_7d': len(present_series) - sum(present_series),
+            'streak': sum(reversed(present_series)) if present_series else 0,
+        }
+    except Exception:
+        student_weekly = {'labels': ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], 'present': [0,0,0,0,0,0,0]}
+        student_stats = {'present_7d': 0, 'absent_7d': 7, 'streak': 0}
+
     return render(request, "attendance/student_dashboard.html", {
         "records": records,
         "student": student,
-        "today_record": today_record
+        "today_record": today_record,
+        "student_weekly": student_weekly,
+        "student_stats": student_stats,
     })
 
 
@@ -189,6 +220,17 @@ def manage_students(request):
 
 @login_required
 @user_passes_test(is_admin)
+def add_student(request):
+    form = StudentForm(request.POST or None, request.FILES or None)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Student added successfully")
+        return redirect('manage_students')
+    return render(request, 'attendance/student_form.html', {'form': form, 'action': 'Add'})
+
+
+@login_required
+@user_passes_test(is_admin)
 def manage_teachers(request):
     teachers = Teacher.objects.all()
     return render(request, 'attendance/manage_teachers.html', {'teachers': teachers})
@@ -213,7 +255,6 @@ def admin_attendance_view(request):
          "grouped_attendance": final_group
     })
 
-
 @csrf_protect
 def register(request):
     if request.method == 'POST':
@@ -227,13 +268,7 @@ def register(request):
 
             profile = Profile.objects.get(user=user)
             profile.role = role
-
-            # Students & teachers auto-approved
-            if role in ['student', 'teacher']:
-                profile.is_approved = True
-            else:
-                profile.is_approved = False  # admins must wait
-
+            profile.is_approved = role in ['student', 'teacher']
             profile.save()
 
             if role == 'student':
@@ -247,7 +282,9 @@ def register(request):
             messages.success(request, "Registration successful. Please log in.")
             return redirect('login_view')
         else:
-            messages.error(request, "Please correct the errors.")
+            # Show the form with errors on the same registration page
+            messages.error(request, "Registration failed. Please correct the errors below.")
+            return render(request, 'attendance/register.html', {'user_form': user_form})
     else:
         user_form = CustomUserCreationForm()
 
@@ -258,71 +295,72 @@ def logout_view(request):
     logout(request)
     return redirect('login_view')
 
+
+
+@csrf_exempt
 @login_required
 @user_passes_test(is_student)
-@csrf_exempt
 @require_POST
 def mark_attendance(request):
     try:
         data = json.loads(request.body)
-        image_data = data.get('image')
+        image_data = data.get("image")
 
         if not image_data:
             return JsonResponse({"error": "No image received"}, status=400)
 
-        format, imgstr = image_data.split(';base64,')
-        img_bytes = base64.b64decode(imgstr)
-        image = Image.open(BytesIO(img_bytes)).convert('RGB')
+        # Decode base64 image
+        try:
+            format, imgstr = image_data.split(";base64,")
+            img_bytes = base64.b64decode(imgstr)
+            image = Image.open(BytesIO(img_bytes)).convert("RGB")
+        except Exception:
+            return JsonResponse({"error": "Invalid image format"}, status=400)
 
-        frame = np.array(image)
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        # Convert to numpy RGB (face_recognition expects RGB)
+        frame = np.array(image)  # already RGB from PIL
+        rgb_frame = frame
 
-        known_faces = get_encode_faces()
-        known_names = list(known_faces.keys())
-        known_encodings = list(known_faces.values())
+        # ✅ Only get the logged-in student's encoding
+        known_faces = get_encode_faces(user=request.user)
+        if request.user.username not in known_faces:
+            return JsonResponse({"error": "No registered face found for this account"}, status=404)
 
+        known_encoding = known_faces[request.user.username]
+
+        # Detect faces
         face_locations = face_recognition.face_locations(rgb_frame)
         face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
         if not face_encodings:
             return JsonResponse({"message": "No face detected ❗"})
 
-        marked_names, already_marked_names, unrecognized_face = [], [], 0
+        # Check if any detected face matches logged-in student
+        recognized = any(
+            face_recognition.compare_faces([known_encoding], encoding, tolerance=0.5)[0]
+            for encoding in face_encodings
+        )
 
-        for encoding in face_encodings:
-            matches = face_recognition.compare_faces(known_encodings, encoding)
-            face_distances = face_recognition.face_distance(known_encodings, encoding)
+        if not recognized:
+            return JsonResponse({"message": "Face not recognized ❌. Please try again."})
 
-            if len(face_distances) > 0:
-                best_match = np.argmin(face_distances)
-                if matches[best_match]:
-                    name = known_names[best_match]
+        # ✅ Mark attendance
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return JsonResponse({"error": "Student profile not found for this account"}, status=404)
+        today = timezone.localdate()
 
-                    if name != request.user.username:
-                        return JsonResponse({"message": f"Face does not match logged-in user ❌"})
+        attendance, created = Attendance.objects.get_or_create(
+            student=student,
+            date=today,
+            defaults={"timestamp": timezone.now(), "status": "Present"},
+        )
 
-                    student = Student.objects.get(user=request.user)
-                    today = timezone.localdate()
-                    already_marked = Attendance.objects.filter(student=student, date=today).exists()
-
-                    if already_marked:
-                        already_marked_names.append(name)
-                    else:
-                        Attendance.objects.create(student=student, timestamp=timezone.now(), date=today)
-                        marked_names.append(name)
-                else:
-                    unrecognized_face += 1
-            else:
-                unrecognized_face += 1
-
-        if marked_names:
-            return JsonResponse({"message": f"Attendance marked for: {', '.join(marked_names)} ✅"})
-        elif already_marked_names:
-            return JsonResponse({"message": f"Already marked: {', '.join(already_marked_names)} "})
-        elif unrecognized_face > 0:
-            return JsonResponse({"message": "No recognized face found ❌"})
+        if created:
+            return JsonResponse({"message": "Attendance marked successfully ✅"})
         else:
-            return JsonResponse({"message": "unknown error ❗"})
+            return JsonResponse({"message": "Your attendance is already marked today."})
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)

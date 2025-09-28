@@ -1,10 +1,25 @@
 {% extends "attendance/base.html" %}
 {% block content  %}
-<h3>{{action}} Student</h3>
-<form method="post">
-{% csrf_token %}
-{{form.as_p}}
-<button type="submit" class="btn,btn-success" >{{action}}</button>
-<a href="{% url 'manage_students' %}" class="btn btn-secondary">Cancel</a>
-</form>
+<div class="container" style="max-width: 720px;">
+  <div class="card">
+    <div class="card-body p-4 p-md-5">
+      <h3 class="mb-3">{{ action }} Student</h3>
+      <form method="post" enctype="multipart/form-data" class="row g-3">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="col-12">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field.as_widget|safe }}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="col-12 d-flex gap-2">
+          <button type="submit" class="btn btn-accent">{{ action }}</button>
+          <a href="{% url 'manage_students' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock  %}

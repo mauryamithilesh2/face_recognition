@@ -3,35 +3,45 @@
 
 {% block content %}
 
-<h3>Manage Student</h3>
-<br/>
-{% comment %} <a href="{% url 'add_student'%}" class="btn btn-sm btn-success">Add Student</a> {% endcomment %}
-<br/><br/>
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Roll No</th>
-            <th>Email</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for student in students %}
-        <tr>
-            <td>{{student.user.username}} </td>
-            <td>{{student.roll_no}} </td>
-            <td>{{student.user.email}} </td>
-            <td>
-            <a href="{% url 'edit_student' student.id %}" class="btn btn-sm btn-warning">Edit</a>
-            <a href="{% url 'delete_student' student.id %}" class="btn btn-sm btn-danger">Delete</a>
-        </td>
+<div class="container-fluid">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">Manage Students</h3>
+    <a href="{% url 'add_student' %}" class="btn btn-accent"><i class="bi bi-person-plus me-1"></i>Add Student</a>
+  </div>
 
-        {% empty %}
-        <tr>
-            <td colspan="3">No Student Found</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Roll No</th>
+              <th>Email</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in students %}
+            <tr>
+              <td>{{ student.user.username }}</td>
+              <td>{{ student.roll_no }}</td>
+              <td>{{ student.user.email }}</td>
+              <td class="text-end">
+                <a href="{% url 'edit_student' student.id %}" class="btn btn-sm btn-primary"><i class="bi bi-pencil-square"></i></a>
+                <a href="{% url 'delete_student' student.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this student?');"><i class="bi bi-trash"></i></a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No students found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock  %}
