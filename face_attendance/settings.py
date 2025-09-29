@@ -25,7 +25,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-k+d2^1ngv_#%b9h%gv!8*
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+# Default to your Railway domain to keep names consistent if env is not set
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'facedmark.up.railway.app,localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -149,6 +150,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.up.railway.app',
     'https://*.railway.app',
     'https://facedmark.up.railway.app',
+
 ]
 
 # Add Railway URL to trusted origins if available
