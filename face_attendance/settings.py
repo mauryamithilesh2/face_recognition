@@ -149,7 +149,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'https://*.up.railway.app',
     'https://*.railway.app',
-    'https://facedmark.up.railway.app',
+    'https://facemark.up.railway.app',
 
 ]
 
