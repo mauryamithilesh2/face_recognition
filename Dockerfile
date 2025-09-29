@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     libopenblas-dev \
     liblapack-dev \
     libx11-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -23,7 +24,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the project
 COPY . .
 
-# Run migrations and collectstatic on container startup
-CMD python manage.py migrate && \
-    python manage.py collectstatic --noinput && \
-    gunicorn face_attendance.wsgi:application --bind 0.0.0.0:8000
+# Create staticfiles directory
+RUN mkdir -p /app/staticfiles
+
+# Make startup script executable
+RUN chmod +x /app/start.sh
+
+# Expose port (Railway will override this)
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-8000}/ || exit 1
+
+# Use startup script
+CMD ["/app/start.sh"]
