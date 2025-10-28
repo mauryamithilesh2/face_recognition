@@ -25,8 +25,13 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-k+d2^1ngv_#%b9h%gv!8*
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
-# Default to your Railway domain to keep names consistent if env is not set
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'facedmark.up.railway.app,localhost,127.0.0.1').split(',')
+
+# Allowed hosts (include Render domains by default)
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,.onrender.com').split(',') if h.strip()]
+
+# Add Render-provided hostname if available
+if os.environ.get('RENDER_EXTERNAL_HOSTNAME'):
+    ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
 
 
 # Application definition
