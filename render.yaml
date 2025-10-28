@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: face-attendance
+    env: docker
+    plan: free
+    autoDeploy: true
+    region: oregon
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PORT
+        value: "8000"
+    dockerCommand: /app/start.sh
+
