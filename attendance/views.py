@@ -1,7 +1,6 @@
 # request
 import cv2
 import numpy as np
-import face_recognition
 from django.shortcuts import render,redirect,get_object_or_404
 from .models import Student, Attendance,AdminProfile,Profile,Teacher
 from datetime import date, datetime
@@ -317,29 +316,33 @@ def mark_attendance(request):
         except Exception:
             return JsonResponse({"error": "Invalid image format"}, status=400)
 
-        # Convert to numpy RGB (face_recognition expects RGB)
-        frame = np.array(image)  # already RGB from PIL
-        rgb_frame = frame
+        # Convert to numpy BGR for OpenCV
+        frame_rgb = np.array(image)
+        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
 
         # ✅ Only get the logged-in student's encoding
         known_faces = get_encode_faces(user=request.user)
         if request.user.username not in known_faces:
             return JsonResponse({"error": "No registered face found for this account"}, status=404)
 
-        known_encoding = known_faces[request.user.username]
+        known_face = known_faces[request.user.username]
 
-        # Detect faces
-        face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
-
-        if not face_encodings:
+        # Detect face ROI from current frame
+        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+        cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+        faces = cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(80, 80))
+        if len(faces) == 0:
             return JsonResponse({"message": "No face detected ❗"})
 
-        # Check if any detected face matches logged-in student
-        recognized = any(
-            face_recognition.compare_faces([known_encoding], encoding, tolerance=0.5)[0]
-            for encoding in face_encodings
-        )
+        # Train a tiny LBPH model on the user's registered face and predict current
+        x, y, w, h = max(faces, key=lambda f: f[2]*f[3])
+        current_face = cv2.resize(gray[y:y+h, x:x+w], (200, 200), interpolation=cv2.INTER_CUBIC)
+
+        recognizer = cv2.face.LBPHFaceRecognizer_create(radius=1, neighbors=8, grid_x=8, grid_y=8)
+        labels = np.array([0], dtype=np.int32)
+        recognizer.train([known_face], labels)
+        label, confidence = recognizer.predict(current_face)
+        recognized = confidence < 60.0
 
         if not recognized:
             return JsonResponse({"message": "Face not recognized ❌. Please try again."})
