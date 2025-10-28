@@ -1,14 +1,11 @@
 # Use slim python base image
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Install system dependencies required by dlib & face-recognition
-RUN apt-get update && apt-get install -y \
-    cmake \
-    g++ \
-    make \
-    libopenblas-dev \
-    liblapack-dev \
-    libx11-dev \
+# Install minimal runtime libraries (avoid heavy build toolchain)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopenblas0 \
+    liblapack3 \
+    libx11-6 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,8 +15,13 @@ WORKDIR /app
 # Copy requirements first (for caching)
 COPY requirements.txt .
 
-# Install python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Speed up pip and prefer wheels to avoid building from source (dlib)
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100
+
+# Install python dependencies (prefer binary wheels)
+RUN pip install --prefer-binary -r requirements.txt
 
 # Copy the rest of the project
 COPY . .
